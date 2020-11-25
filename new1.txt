@@ -1,0 +1,184 @@
+insert 
+into  employee
+values('411421','时洋','1999.2.26','厦门','男',20000,'23010119960101XXXX','d4');
+2
+insert 
+into  works_on
+values('411421','p2','100');
+
+
+update employee
+set salary='3000';
+4
+update employee
+set salary='4000'
+where ssn='23010119950101XXXX';
+5
+update employee,department
+set salary=salary*1.1
+where employee.dno=department.dnumber and department.dname='研发部';
+
+
+
+delete
+from dependent
+where essn='23010119950101XXXX';
+7
+delete
+from employee
+where  exists 
+(
+select *
+from department
+where department.dname='研发部'  and employee.dno=department.dnumber
+);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+1.
+创建一个名为Tom的用户，采用口令认证方式，口令为Tom
+CREATE USER 'Tom'@'localhost' IDENTIFIED BY 'Tom';
+
+创建一个名为Joan的用户，采用口令认证方式，口令为Joan
+CREATE USER 'Joan'@'localhost' IDENTIFIED BY 'Joan';
+
+2.
+
+
+ update employee set salary = 500 where name = '王二';
+//GRANT CREATE SESSION TO 'Tom'@'localhost';
+
+将employee表的SELECT、UPDATE、DELETE、INSERT对象权限授予Tom用户，Tom用户可以将权限传递
+GRANT select
+ON TABLE dourse_exp.employee
+TO 'Tom'@'localhost'
+WITH GRANT OPTION;
+
+Tom用户将employee表的SELECT对象权限授予Joan用户
+GRANT SELECT
+ON TABLE dourse_exp.employee
+TO 'Joan'@'localhost';
+
+3
+Tom用户回收其授予Joan用户的SELECT对象权限
+revoke select
+on dourse_exp.employee
+from 'Joan'@'localhost';
+
+
+利用system用户回收Tom用户的所有权限
+revoke all privileges,grant option from 'Tom'@'localhost';
+
+
+
+4
+为实验一中的各个基本表定义参照完整性
+employee
+
+//姓名唯一
+alter table employee
+add constraint name_c unique(name);
+
+
+
+
+department
+//部门名唯一
+alter table department
+add constraint dname_c unique(dname);
+//添加主键dnumber
+alter table department
+add constraint dnumber_c primary key(dnumber);
+
+project
+//项目名唯一
+alter table project
+add constraint pname_c unique(pname);
+//添加主键pnumber
+alter table project
+add constraint pnumber_c primary key(pnumber);
+
+works_on
+//添加主键essn pno
+alter table works_on
+add constraint primary key(essn,pno);
+
+//添加外键
+alter table works_on add constraint FK_works_on1
+foreign key(essn) references employee(ssn);
+alter table works_on add constraint FK_works_on2
+foreign key(pno) references project(pnumber);
+
+
+dependent
+
+//relationship 不为空
+alter table dependent MODIFY COLUMN relationship varchar(4) not null;
+//添加外键
+alter table dependent add constraint FK_dependent
+foreign key(essn) references employee(ssn);
+
+
+
+depart_location
+
+//添加外键
+alter table depart_location add constraint FK_depart_location
+foreign key(dnumber) references department(dnumber);
+
+
+
+
+
+5
+在表department上创建一个触发器deaprt_update，当更改部门号时同步更改employee表中对应的部门号
+
+//测试update department set dnumber = 'd4' where dnumber = 'd5';
+
+delete from department where dnumber = 'd3' 
+
+delimiter //							
+CREATE TRIGGER trigger_department1
+AFTER delete on department
+for each row
+begin
+delete from employee where dno = old.dnumber;
+delete from project where dnum = old.dnumber;
+end;
+//
+
+
+DROP TRIGGER trigger_department;
+
+
+在表employee上创建一个触发器employee_delete，当删除职工元组同步删除对应职工的参与项目元组
+//测试 delete from employee where ssn = '411421';
+delimiter //		
+CREATE TRIGGER trigger_employee
+AFTER delete on employee
+for each row
+begin
+delete from works_on where essn = old.ssn;
+end;
+//
+
+
+
+DROP TRIGGER trigger_employee;
+
+
+
+
+
+
